@@ -14,7 +14,7 @@
 
 CC = gcc
 
-CFLAGS += -Wall \
+override CFLAGS += -Wall \
           -Wextra \
           -Wno-unused-parameter \
           -Iinclude \

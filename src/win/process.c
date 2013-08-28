@@ -374,15 +374,6 @@ static WCHAR* search_path(const WCHAR *file,
                                   name_has_ext);
 
     while (result == NULL) {
-      if (*dir_end == L'\0') {
-        break;
-      }
-
-      /* Skip the separator that dir_end now points to */
-      if (dir_end != path) {
-        dir_end++;
-      }
-
       /* Next slice starts just after where the previous one ended */
       dir_start = dir_end;
 
@@ -393,27 +384,33 @@ static WCHAR* search_path(const WCHAR *file,
       }
 
       /* If the slice is zero-length, don't bother */
-      if (dir_end - dir_start == 0) {
-        continue;
+      if (dir_end - dir_start > 0) {
+        dir_path = dir_start;
+        dir_len = dir_end - dir_start;
+
+        /* Adjust if the path is quoted. */
+        if (dir_path[0] == '"' || dir_path[0] == '\'') {
+          ++dir_path;
+          --dir_len;
+        }
+
+        if (dir_path[dir_len - 1] == '"' || dir_path[dir_len - 1] == '\'') {
+          --dir_len;
+        }
+
+        result = path_search_walk_ext(dir_path, dir_len,
+                                      file, file_len,
+                                      cwd, cwd_len,
+                                      name_has_ext);
       }
 
-      dir_path = dir_start;
-      dir_len = dir_end - dir_start;
-
-      /* Adjust if the path is quoted. */
-      if (dir_path[0] == '"' || dir_path[0] == '\'') {
-        ++dir_path;
-        --dir_len;
+      /* Stop if reached end of the line */
+      if (*dir_end == L'\0') {
+        break;
       }
-
-      if (dir_path[dir_len - 1] == '"' || dir_path[dir_len - 1] == '\'') {
-        --dir_len;
-      }
-
-      result = path_search_walk_ext(dir_path, dir_len,
-                                    file, file_len,
-                                    cwd, cwd_len,
-                                    name_has_ext);
+      
+      /* Skip the separator that dir_end now points to */
+      dir_end++;
     }
   }
 

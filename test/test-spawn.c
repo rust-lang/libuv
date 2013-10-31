@@ -51,7 +51,6 @@ static void close_cb(uv_handle_t* handle) {
   close_cb_called++;
 }
 
-
 static void exit_cb(uv_process_t* process,
                     int64_t exit_status,
                     int term_signal) {
@@ -60,6 +59,13 @@ static void exit_cb(uv_process_t* process,
   ASSERT(exit_status == 1);
   ASSERT(term_signal == 0);
   uv_close((uv_handle_t*)process, close_cb);
+}
+
+
+static void fail_cb(uv_process_t* process,
+                    int64_t exit_status,
+                    int term_signal) {
+  ASSERT(0 && "fail_cb called");
 }
 
 
@@ -72,20 +78,6 @@ static void expect(uv_process_t* process,
   ASSERT(exit_status == err);
   ASSERT(term_signal == 0);
   uv_close((uv_handle_t*)process, close_cb);
-}
-
-
-static void exit_cb_expect_enoent(uv_process_t* process,
-                                 int64_t exit_status,
-                                 int term_signal) {
-  expect(process, exit_status, term_signal, UV_ENOENT);
-}
-
-
-static void exit_cb_expect_eperm(uv_process_t* process,
-                                 int64_t exit_status,
-                                 int term_signal) {
-  expect(process, exit_status, term_signal, UV_EPERM);
 }
 
 
@@ -166,12 +158,12 @@ static void timer_cb(uv_timer_t* handle, int status) {
 
 
 TEST_IMPL(spawn_fails) {
-  init_process_options("", exit_cb_expect_enoent);
+  init_process_options("", fail_cb);
   options.file = options.args[0] = "program-that-had-better-not-exist";
-  ASSERT(0 == uv_spawn(uv_default_loop(), &process, &options));
-  ASSERT(1 == uv_is_active((uv_handle_t*) &process));
+
+  ASSERT(UV_ENOENT == uv_spawn(uv_default_loop(), &process, &options));
+  ASSERT(0 == uv_is_active((uv_handle_t*) &process));
   ASSERT(0 == uv_run(uv_default_loop(), UV_RUN_DEFAULT));
-  ASSERT(1 == exit_cb_called);
 
   MAKE_VALGRIND_HAPPY();
   return 0;
@@ -851,19 +843,18 @@ TEST_IMPL(spawn_setuid_fails) {
     ASSERT(0 == setuid(pw->pw_uid));
   }
 
-  init_process_options("spawn_helper1", exit_cb_expect_eperm);
+  init_process_options("spawn_helper1", fail_cb);
 
   options.flags |= UV_PROCESS_SETUID;
   options.uid = 0;
 
   r = uv_spawn(uv_default_loop(), &process, &options);
-  ASSERT(r == 0);
+  ASSERT(r == UV_EPERM);
 
   r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
   ASSERT(r == 0);
 
-  ASSERT(exit_cb_called == 1);
-  ASSERT(close_cb_called == 1);
+  ASSERT(close_cb_called == 0);
 
   MAKE_VALGRIND_HAPPY();
   return 0;
@@ -883,19 +874,18 @@ TEST_IMPL(spawn_setgid_fails) {
     ASSERT(0 == setuid(pw->pw_uid));
   }
 
-  init_process_options("spawn_helper1", exit_cb_expect_eperm);
+  init_process_options("spawn_helper1", fail_cb);
 
   options.flags |= UV_PROCESS_SETGID;
   options.gid = 0;
 
   r = uv_spawn(uv_default_loop(), &process, &options);
-  ASSERT(r == 0);
+  ASSERT(r == UV_EPERM);
 
   r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
   ASSERT(r == 0);
 
-  ASSERT(exit_cb_called == 1);
-  ASSERT(close_cb_called == 1);
+  ASSERT(close_cb_called == 0);
 
   MAKE_VALGRIND_HAPPY();
   return 0;

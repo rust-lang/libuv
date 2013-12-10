@@ -94,6 +94,9 @@ if __name__ == '__main__':
   if not any(a.startswith('-Dcomponent=') for a in args):
     args.append('-Dcomponent=static_library')
 
+  if sys.platform == 'darwin' and '-DOS=android' in sys.argv[1:]:
+    sys.platform='linux'    
+    
   gyp_args = list(args)
   print gyp_args
   run_gyp(gyp_args)

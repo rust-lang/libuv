@@ -205,7 +205,7 @@ static int uv__fs_readdir_filter(const struct dirent* dent) {
 
 /* This should have been called uv__fs_scandir(). */
 static ssize_t uv__fs_readdir(uv_fs_t* req) {
-  struct dirent **dents;
+  struct dirent **dents = NULL;
   int saved_errno;
   size_t off;
   size_t len;
@@ -215,7 +215,9 @@ static ssize_t uv__fs_readdir(uv_fs_t* req) {
 
   n = scandir(req->path, &dents, uv__fs_readdir_filter, alphasort);
 
-  if (n == -1 || n == 0)
+  if (n == 0)
+    goto out; // osx still needs to deallocate some memory
+  else if (n == -1)
     return n;
 
   len = 0;
@@ -243,7 +245,7 @@ static ssize_t uv__fs_readdir(uv_fs_t* req) {
 
 out:
   saved_errno = errno;
-  {
+  if (dents != NULL) {
     for (i = 0; i < n; i++)
       free(dents[i]);
     free(dents);

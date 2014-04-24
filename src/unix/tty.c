@@ -92,7 +92,7 @@ skip:
   if (readable)
     flags |= UV_STREAM_READABLE;
   else
-    flags |= UV_STREAM_WRITABLE;
+    flags |= UV_STREAM_WRITABLE | UV_STREAM_BLOCKING;
 
   if (!(flags & UV_STREAM_BLOCKING))
     uv__nonblock(fd, 1);

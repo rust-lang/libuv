@@ -50,6 +50,10 @@
 
 #define MAX_INPUT_BUFFER_LENGTH 8192
 
+#ifndef COMMON_LVB_REVERSE_VIDEO
+# define COMMON_LVB_REVERSE_VIDEO 0x4000
+#endif
+
 
 static void uv_tty_update_virtual_window(CONSOLE_SCREEN_BUFFER_INFO* info);
 

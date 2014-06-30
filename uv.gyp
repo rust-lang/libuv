@@ -61,11 +61,13 @@
         'include/uv.h',
         'include/tree.h',
         'include/uv-errno.h',
+        'include/uv-threadpool.h',
         'include/uv-version.h',
         'src/fs-poll.c',
         'src/heap-inl.h',
         'src/inet.c',
         'src/queue.h',
+        'src/threadpool.c',
         'src/uv-common.c',
         'src/uv-common.h',
         'src/version.c'
@@ -103,7 +105,6 @@
             'src/win/stream-inl.h',
             'src/win/tcp.c',
             'src/win/tty.c',
-            'src/win/threadpool.c',
             'src/win/timer.c',
             'src/win/udp.c',
             'src/win/util.c',
@@ -114,11 +115,11 @@
           ],
           'link_settings': {
             'libraries': [
-              '-ladvapi32.lib',
-              '-liphlpapi.lib',
-              '-lpsapi.lib',
-              '-lshell32.lib',
-              '-lws2_32.lib'
+              '-ladvapi32',
+              '-liphlpapi',
+              '-lpsapi',
+              '-lshell32',
+              '-lws2_32'
             ],
           },
         }, { # Not Windows i.e. POSIX
@@ -154,7 +155,6 @@
             'src/unix/stream.c',
             'src/unix/tcp.c',
             'src/unix/thread.c',
-            'src/unix/threadpool.c',
             'src/unix/timer.c',
             'src/unix/tty.c',
             'src/unix/udp.c',
@@ -409,7 +409,7 @@
             'test/runner-win.c',
             'test/runner-win.h'
           ],
-          'libraries': [ 'ws2_32.lib' ]
+          'libraries': [ '-lws2_32' ]
         }, { # POSIX
           'defines': [ '_GNU_SOURCE' ],
           'sources': [
@@ -473,7 +473,7 @@
             'test/runner-win.c',
             'test/runner-win.h',
           ],
-          'libraries': [ 'ws2_32.lib' ]
+          'libraries': [ '-lws2_32' ]
         }, { # POSIX
           'defines': [ '_GNU_SOURCE' ],
           'sources': [

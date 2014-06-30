@@ -31,19 +31,22 @@
 
 #ifdef _MSC_VER
 # define INLINE __inline
+# define UV_THREAD_LOCAL __declspec( thread )
 #else
 # define INLINE inline
+# define UV_THREAD_LOCAL __thread
 #endif
 
 
 #ifdef _DEBUG
-extern __declspec( thread ) int uv__crt_assert_enabled;
+
+extern UV_THREAD_LOCAL int uv__crt_assert_enabled;
 
 #define UV_BEGIN_DISABLE_CRT_ASSERT()                           \
   {                                                             \
     int uv__saved_crt_assert_enabled = uv__crt_assert_enabled;  \
     uv__crt_assert_enabled = FALSE;
-  
+
 
 #define UV_END_DISABLE_CRT_ASSERT()                             \
     uv__crt_assert_enabled = uv__saved_crt_assert_enabled;      \
@@ -286,28 +289,9 @@ int uv_translate_sys_error(int sys_errno);
 
 
 /*
- * Getaddrinfo
- */
-void uv_process_getaddrinfo_req(uv_loop_t* loop, uv_getaddrinfo_t* req);
-
-
-/*
-* Getnameinfo
-*/
-void uv_process_getnameinfo_req(uv_loop_t* loop, uv_getnameinfo_t* req);
-
-
-/*
  * FS
  */
 void uv_fs_init();
-void uv_process_fs_req(uv_loop_t* loop, uv_fs_t* req);
-
-
-/*
- * Threadpool
- */
-void uv_process_work_req(uv_loop_t* loop, uv_work_t* req);
 
 
 /*

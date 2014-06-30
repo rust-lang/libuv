@@ -26,9 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if !defined(__MINGW32__)
 #include <crtdbg.h>
-#endif
 
 #include "uv.h"
 #include "internal.h"
@@ -44,24 +42,24 @@ static uv_once_t uv_init_guard_ = UV_ONCE_INIT;
 static uv_once_t uv_default_loop_init_guard_ = UV_ONCE_INIT;
 
 
-#if defined(_DEBUG) && !defined(__MINGW32__)
+#if defined(_DEBUG)
 /* Our crt debug report handler allows us to temporarily disable asserts */
 /* just for the current thread. */
 
-__declspec( thread ) int uv__crt_assert_enabled = TRUE;
+UV_THREAD_LOCAL int uv__crt_assert_enabled = TRUE;
 
 static int uv__crt_dbg_report_handler(int report_type, char *message, int *ret_val) {
   if (uv__crt_assert_enabled || report_type != _CRT_ASSERT)
     return FALSE;
-  
+
   if (ret_val) {
     /* Set ret_val to 0 to continue with normal execution. */
     /* Set ret_val to 1 to trigger a breakpoint. */
 
-    if(IsDebuggerPresent())     
-      *ret_val = 1;  
+    if(IsDebuggerPresent())
+      *ret_val = 1;
     else
-      *ret_val = 0;  
+      *ret_val = 0;
   }
 
   /* Don't call _CrtDbgReport. */
@@ -133,6 +131,7 @@ int uv_loop_init(uv_loop_t* loop) {
   loop->last_tick_count = 0;
   uv_update_time(loop);
 
+  QUEUE_INIT(&loop->wq);
   QUEUE_INIT(&loop->handle_queue);
   QUEUE_INIT(&loop->active_reqs);
   loop->active_handles = 0;
@@ -158,6 +157,15 @@ int uv_loop_init(uv_loop_t* loop) {
 
   loop->timer_counter = 0;
   loop->stop_flag = 0;
+
+  if (uv_mutex_init(&loop->wq_mutex))
+    abort();
+
+  if (uv_async_init(loop, &loop->wq_async, uv__work_done))
+    abort();
+
+  uv__handle_unref(&loop->wq_async);
+  loop->wq_async.flags |= UV__HANDLE_INTERNAL;
 
   return 0;
 }
